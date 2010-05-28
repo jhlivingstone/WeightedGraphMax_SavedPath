@@ -1,0 +1,140 @@
+ Author: John Livingstone
+  
+ This Hadoop (Using Cloudera Hadoop version: 0.20.1+152) MapReduce program operates on a directed graph, in adjacency list format.
+ The program computes the maximum total of node weights, from top to bottom of the directed graph, and records the path taken to
+ get to the maximum total node weight, by performing a breadth-first graph search using an iterative map-reduce algorithm. 
+ 
+ The directed graph is in the form of a triangle set of numbers.
+ This program takes as input a 'triangle' set of numbers in an adjacency list format.
+ The triangle of numbers represent a directed graph, where each node points to the 2 nodes directly below it on the next line.
+ For example, for the triangle below: (note that I add an 'aggregation node' with zero weight to the triangle as the last node)
+ 
+ 21
+ 10 13
+ 45 21 32
+ 0
+ 
+  Is represented by the following Adjacency List:
+  Node position 	Weight	Points to Nodes (Edges)
+  1				21		2,3
+  2				10		4,5
+  3				13		5,6
+  4				45		7
+  5				21		7
+  6				32		7
+  7				0		
+  
+  The input format is
+  ID   WEIGHT|EDGES|DISTANCE|COLOR
+  where
+  ID = the unique identifier for a node (assumed to be an int here)
+  WEIGHT = The value of the node - this integer value contributes to the 'distance' from the starting node
+  EDGES = the list of edges emanating from the node (e.g. 3,8,9,12)
+  DISTANCE = the Maximum 'to be determined' distance of the node from the source
+  COLOR = a simple status tracking field to keep track of when we're finished with a node
+  It assumes that the source node (the node from which to start the search) has
+  been marked with distance of zero and color GRAY in the original input.  All other
+  nodes will have input distance of zero and color WHITE.
+  
+  An example line of input format file:
+
+1	5|2,3,|0|GRAY|
+2	10|4,5,|0|WHITE|
+3	12|5,6,|0|WHITE|
+4	17|7,8,|0|WHITE|
+5	14|8,9,|0|WHITE|
+6	15|9,10,|0|WHITE|
+7	9|11,12,|0|WHITE|
+8	14|12,13,|0|WHITE|
+9	10|13,14,|0|WHITE|
+10	6|14,15,|0|WHITE|
+11	5|16,17,|0|WHITE|
+12	4|17,18,|0|WHITE|
+13	3|18,19,|0|WHITE|
+14	2|19,20,|0|WHITE|
+15	7|20,21,|0|WHITE|
+16	6|22,|0|WHITE|
+17	8|22,|0|WHITE|
+18	5|22,|0|WHITE|
+19	4|22,|0|WHITE|
+20	3|22,|0|WHITE|
+21	2|22,|0|WHITE|
+22	0|23,|0|WHITE|
+ 
+ To run:   hadoop jar /home/training/workspace/Graph/bin/WeightedGraphMinSearch.jar -c IOFiles-HDFS-Config.xml
+ 
+ The application takes one required parameter and a few optional parameters.
+ The one required parameter is the "-c" input and output file configuration file that specified
+ both the input and output file paths. The idea of locating the IO file information in a separate
+ configuration file is that you move between separate sets of files based on where you are testing
+ (local HDFS or Amazon S3) and what input data sets that you are operating upon.
+ 
+ The usage syntax is displayed below:
+Usage: WeightedGraphMinSearch -c <Input / Output Configuration.xml file>"
+Optional Parameters are:
+ -i <Number of Iterations>
+ -m <Number of Map Tasks>
+ -r <Number of Reduce Tasks>
+  where <Number of Iterations> is equal to the number of rows to be processed in the triangle 
+  		or is the number of iterations to work through of the directed graph.  We can use this
+  		parameter to set the upper limit of iterations that will run as we expand the frontier
+  		of processed notes through the directed weighted graph.						
+ 
+
+  
+  The output format is
+  ID   WEIGHT|EDGES|DISTANCE|COLOR|Path_taken_edges|
+  where
+  ID = the unique identifier for a node (assumed to be an int here)
+  WEIGHT = The value of the node - this integer value contributes to the 'distance' from the starting node
+  EDGES = the list of edges emanating from the node (e.g. 3,8,9,12)
+  DISTANCE = the Maximum 'to be determined' distance of the node from the source starting node
+  COLOR = a simple status tracking field to keep track of when we're finished with a node
+  Path_taken_edges: the nodes edges taken from the starting node to get to this node.
+  
+  An example output file after the 6th iteration:
+1	5|2,3,|0|BLACK||
+2	10|4,5,|5|BLACK|1,|
+3	12|5,6,|5|BLACK|1,|
+4	17|7,8,|15|BLACK|1,2,|
+5	14|8,9,|17|BLACK|1,3,|
+6	15|9,10,|17|BLACK|1,3,|
+7	9|11,12,|32|BLACK|1,2,4,|
+8	14|12,13,|32|BLACK|1,2,4,|
+9	10|13,14,|32|BLACK|1,3,6,|
+10	6|14,15,|32|BLACK|1,3,6,|
+11	5|16,17,|41|BLACK|1,2,4,7,|
+12	4|17,18,|46|BLACK|1,2,4,8,|
+13	3|18,19,|46|BLACK|1,2,4,8,|
+14	2|19,20,|42|BLACK|1,3,6,9,|
+15	7|20,21,|38|BLACK|1,3,6,10,|
+16	6|22,|46|BLACK|1,2,4,7,11,|
+17	8|22,|50|BLACK|1,2,4,8,12,|
+18	5|22,|50|BLACK|1,2,4,8,12,|
+19	4|22,|49|BLACK|1,2,4,8,13,|
+20	3|22,|45|BLACK|1,3,6,10,15,|
+21	2|22,|45|BLACK|1,3,6,10,15,|
+22	0||58|BLACK|1,2,4,8,12,17,|
+
+
+
+Some features of this program are the following:
+1. The program performs multiple MapReduce (MR) iterations, using the output of the prior iteration as the imput to the next iteration of the MR pass.
+2. The program executes until one of the two conditions exist (a) either there are no more 'Gray' node to be processed or 
+   (b) we have reached the maximum number of iteration that was specified on the command line.  We use Hadoop counters - specifically
+   the 'NUMBER_OF_GRAY_NODES_TOBE_PROCESSED' counter - to keep track if we have any more gray nodes to process.
+3. We also use the 'NUMBER_OF_GRAY_NODES_PROCESSED' counter, in combination with the 'NUMBER_OF_GRAY_NODES_TOBE_PROCESSED' counter to know that we are processing the last set of 
+   gray nodes, and that we should make sure that we have only one Reducer task so that all results are aggregated into one putput (Part00000) file.
+4. We use job configuration files to specify and easily switch between differing input and output files.
+5. To run the application on AWS, the jar location will be something like: /jhl-mapreduce/WeightedGraphMaxSearch.jar and the jar arguments will
+   be something like: -c IOFiles-AWS-Config.xml
+
+The initial 'seed' source was taken from "john & Cailin breadth-first graph search using an iterative map-reduce algorithm" 
+at http://www.johnandcailin.com/blog/cailin/breadth-first-graph-search-using-iterative-map-reduce-algorithm 
+
+The idea to use the Hadoop counter to control the maximum number on iterations was taken from "cchandler / codekata19-mapreduce"
+at http://github.com/cchandler/codekata19-mapreduce 
+
+All are free to use the code in this MR application.
+    
+If you like this application and find it useful in your work or have any questions on its use - please send me a note at john.livingst@gmail.com
