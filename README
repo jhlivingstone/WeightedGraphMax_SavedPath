@@ -119,17 +119,17 @@ Optional Parameters are:
 
 
 Some features of this program are the following:
-1. The program performs multiple MapReduce (MR) iterations, using the output of the prior iteration as the imput to the next iteration of the MR pass.
+1. The program performs multiple MapReduce (MR) iterations, using the output of the prior iteration as the input to the next iteration of the MR pass.
 2. The program executes until one of the two conditions exist (a) either there are no more 'Gray' node to be processed or 
    (b) we have reached the maximum number of iteration that was specified on the command line.  We use Hadoop counters - specifically
    the 'NUMBER_OF_GRAY_NODES_TOBE_PROCESSED' counter - to keep track if we have any more gray nodes to process.
 3. We also use the 'NUMBER_OF_GRAY_NODES_PROCESSED' counter, in combination with the 'NUMBER_OF_GRAY_NODES_TOBE_PROCESSED' counter to know that we are processing the last set of 
-   gray nodes, and that we should make sure that we have only one Reducer task so that all results are aggregated into one putput (Part00000) file.
+   gray nodes, and that we should make sure that we have only one Reducer task so that all results are aggregated into one output (Part00000) file.
 4. We use job configuration files to specify and easily switch between differing input and output files.
 5. To run the application on AWS, the jar location will be something like: /jhl-mapreduce/WeightedGraphMaxSearch.jar and the jar arguments will
    be something like: -c IOFiles-AWS-Config.xml
 
-The initial 'seed' source was taken from "john & Cailin breadth-first graph search using an iterative map-reduce algorithm" 
+The initial 'seed' source was taken from "John & Cailin breadth-first graph search using an iterative map-reduce algorithm" 
 at http://www.johnandcailin.com/blog/cailin/breadth-first-graph-search-using-iterative-map-reduce-algorithm 
 
 The idea to use the Hadoop counter to control the maximum number on iterations was taken from "cchandler / codekata19-mapreduce"
