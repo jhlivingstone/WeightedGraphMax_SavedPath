@@ -61,7 +61,7 @@
 21	2|22,|0|WHITE|
 22	0|23,|0|WHITE|
  * 
- * To run:   hadoop jar /home/training/workspace/Graph/bin/WeightedGraphMinSearch.jar -c IOFiles-HDFS-Config.xml
+ * To run:   hadoop jar <Path to Jar file>/WeightedGraphMax_SavedPath.jar -c IOFiles-HDFS-Config.xml
  * 
  * The output format is
  * ID   WEIGHT|EDGES|DISTANCE|COLOR|Path_taken_edges|
@@ -118,13 +118,17 @@ public class WeightedGraphMaxSearch extends Configured implements Tool {
 
 	/*
 	 * If the "-i" iteration parameter has been specified on the command line
-	 * This contains the number of rows that have been asked to be processed...
+	 * This contains the number of rows that have been asked to be processed
+         * and is the nubmer of MR iterations that will execute.
 	 */
 	static int NumberOfRowsToProcess = 0;
 
 	/*
-	 *  Indicates when we want only one reducer (when set to true) so that all results are aggregated 
-	 *  This is always set to one for the last iteration
+	 *  Indicates when we want only one reducer (when set to true) for
+         *  a MR iteration.  We set the number of reducers to one so that all
+         *  results are aggregated into one 'part00000' file.
+	 *  The number of reducers is always set to one for the last iteration
+         *  of this MR job.
 	 */
 	static boolean setOneReducer = false;
 
@@ -135,9 +139,9 @@ public class WeightedGraphMaxSearch extends Configured implements Tool {
 	 *  
 	 *  Default values point to local HDFS
 	 */
-	static String inputPathFirstIteration = "input/input-graph"; 				// Path and filename of initial input graph
+	static String inputPathFirstIteration = "input/input-graph";                // Path and filename of initial input graph
 	static String inputPathOtherIterations = "output/outgraph/output-graph-";   // Path and partial filename of subsequent input graph (input for all other iterations)
-	static String outputPathIteration = "output/outgraph/output-graph-";		// Path and partial filename of output graph 
+	static String outputPathIteration = "output/outgraph/output-graph-";	    // Path and partial filename of output graph
 
 	// Log4j...
 	private static final Logger LOG = Logger.getLogger(WeightedGraphMaxSearch.class);
@@ -155,7 +159,7 @@ public class WeightedGraphMaxSearch extends Configured implements Tool {
 		// instantiate a new Job Configuration object
 		JobConf conf = new JobConf(getConf(), WeightedGraphMaxSearch.class);
 		
-		// Job Name..
+		// Job Name...
 		conf.setJobName("WeightedGraphMaxSearch");
 
 		/*
@@ -170,8 +174,7 @@ public class WeightedGraphMaxSearch extends Configured implements Tool {
 		conf.setMapperClass(WeightedGraphMaxSearchMapper.class);
 		conf.setReducerClass(WeightedGraphMaxSearchReducer.class);
 		// Set combiner class, if we had defined one!
-		// conf.setCombinerClass(theClass);
-
+		conf.setCombinerClass(WeightedGraphMaxSearchCombiner.class);
 		/*
 		 * From the command line parameters, retrieve the configuration file name (not optional) 
 		 * and the (optional) 'asked for' number of iterations, mappers, and reducers
@@ -239,7 +242,7 @@ public class WeightedGraphMaxSearch extends Configured implements Tool {
 	 * The main driver for word count map/reduce program. 
 	 * Invoke this method to submit the map/reduce job.
 	 * 
-	 * The MapReduce progr/tmp/VMwareDnD/803ce168/01 Un Petit Probleme.m4aam is run until there are no remaining Gray nodes
+	 * The MapReduce program is run until there are no remaining Gray nodes
 	 * 
 	 * @throws IOException
 	 *           When there is communication problems with the job tracker.
@@ -270,12 +273,10 @@ public class WeightedGraphMaxSearch extends Configured implements Tool {
 				)
 		)
 		{
-
 			String input_filepath;
 
 			// Retrieve the Job configuration...
 			JobConf conf = getJobConf(args);
-
 
 			if (iterationCount == 0)
 			{
@@ -303,7 +304,6 @@ public class WeightedGraphMaxSearch extends Configured implements Tool {
 			LOG.info("numGrayNodesProcessed Count= " + numGrayNodesProcessed);
 			LOG.info("numGrayNodesToBeProcessed Count= " + numGrayNodesToBeProcessed);
 
-
 			if (numGrayNodesToBeProcessed == 0)
 			{
 				LOG.info("End of Interations!  No Gray Nodes Left to Process!!!");
@@ -314,10 +314,8 @@ public class WeightedGraphMaxSearch extends Configured implements Tool {
 				long elapsedSec = (elapsedTimeMillis % 60000) / 1000;
 				float elapsedTimeSec = elapsedTimeMillis/1000F;
 
-
 				System.out.println("MR Job Total Elapsed Time: "+ elapsedMin + " min, " + elapsedSec + " sec");
 				System.out.println("MR Job Total Elapsed Time (sec): "+ elapsedTimeSec);
-
 			}
 
 			iterationCount++;
@@ -335,10 +333,7 @@ public class WeightedGraphMaxSearch extends Configured implements Tool {
 				LOG.info("Last Interation!  Set reducer flag to one!");
 				setOneReducer = true;
 			}
-			
 		}
-
-
 		return 0;
 	}
 
@@ -368,8 +363,6 @@ public class WeightedGraphMaxSearch extends Configured implements Tool {
 			System.out.println("where <Number of Iterations> is equal to the number of rows to be processed in the triangle");
 			return;
 		}
-
-
 
 		int res = ToolRunner.run(new Configuration(), new WeightedGraphMaxSearch(), args);
 		System.exit(res);

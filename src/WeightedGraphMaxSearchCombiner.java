@@ -13,7 +13,7 @@ import org.apache.log4j.Logger;
 
 
 /**
- * A  reducer class that just emits the sum of the input values and the path that got us to that node.
+ * A  combiner class (based on the reducer class) that just emits the sum of the input values and the path that got us to that node.
  * 
  * Note that the reducer executes for each key (each Node ID)
  * 
@@ -21,18 +21,18 @@ import org.apache.log4j.Logger;
  * Input values have the following format: WEIGHT|EDGES|DISTANCE|COLOR|path_taken_edges|
  */
 @SuppressWarnings("deprecation")
-public class WeightedGraphMaxSearchReducer extends MapReduceBase implements
+public class WeightedGraphMaxSearchCombiner extends MapReduceBase implements
     Reducer<IntWritable, Text, IntWritable, Text> {
 
   // Log4j initialzation...
-  private static final Logger LOG = Logger.getLogger(WeightedGraphMaxSearchReducer.class);
+  private static final Logger LOG = Logger.getLogger(WeightedGraphMaxSearchCombiner.class);
 
   public void reduce(IntWritable key,
                      Iterator<Text> values,
                      OutputCollector<IntWritable, Text> output,
                      Reporter reporter) throws IOException {
   	
-    LOG.info("Reduce executing for input key= " + key.toString());
+    LOG.info("Combiner executing for input key= " + key.toString());
 
     List<Integer> edges = null;
     // Contains the path taken to the node
@@ -120,6 +120,6 @@ public class WeightedGraphMaxSearchReducer extends MapReduceBase implements
     
     // Emit the reduced node...
     output.collect(key, new Text(n.getLine()));
-    LOG.info("Reduce output key= " + key + " and value: " + n.getLine());
+    LOG.info("Combiner output key= " + key + " and value: " + n.getLine());
   }
 }

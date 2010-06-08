@@ -16,19 +16,24 @@ import org.apache.log4j.Logger;
    * 
    * Nodes that are Color.WHITE or Color.BLACK are emitted, as is. For every
    * edge of a Color.GRAY node, we emit a new Node with distance incremented by
-   * one. The Color.GRAY node is then colored black and is also emitted.
+   * the weight of that node (representing the weight of the edge coming into that node).
+   * The Color.GRAY node is then colored black and is also emitted.
    * 
    * Key: File Offset   
    * Value: a string that has the following format: ID <tab> WEIGHT|EDGES|DISTANCE|COLOR|path_taken_edges|
    */
   @SuppressWarnings("deprecation")
 public class WeightedGraphMaxSearchMapper extends MapReduceBase implements
-      Mapper<LongWritable, Text, IntWritable, Text> {
-	  
-		private static final Logger LOG = Logger.getLogger(WeightedGraphMaxSearchMapper.class);
+                    Mapper<LongWritable, Text, IntWritable, Text> {
 
-    public void map(LongWritable key, Text value, OutputCollector<IntWritable, Text> output,
-        Reporter reporter) throws IOException {
+	// Log4j Initalization...
+	private static final Logger LOG = Logger.getLogger(WeightedGraphMaxSearchMapper.class);
+
+    
+    public void map(LongWritable key, 
+                    Text value,
+                    OutputCollector<IntWritable, Text> output,
+                    Reporter reporter) throws IOException {
 
       LOG.info("Map executing for input key file offset = " + key.toString() + " and value:  " + value.toString());
 

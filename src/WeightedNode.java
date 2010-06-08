@@ -12,7 +12,7 @@
  * been marked with distance 0 and color GRAY in the original input.  All other
  * nodes will have input distance Integer.MAX_VALUE and color WHITE.
  * 
- * An example line of input format file:
+ * An example input format file:
 
 1	5|2,3,|0|GRAY|
 2	10|4,5,|0|WHITE|
